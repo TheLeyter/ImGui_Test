@@ -14,6 +14,7 @@ int g_iWindowWidth = 1200;
 int g_iWindowHeigh = 800;
 bool g_bAppicationState = true;
 bool imGuiMain = true;
+float color[3];
 
 
 LPDIRECT3D9 g_pD3D = NULL;
@@ -114,14 +115,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevIntance, LPSTR lpCmdLine,
 		ImGui::NewFrame();
 
 		if (imGuiMain) {
-			ImGui::ShowDemoWindow(&imGuiMain);
+			ImGui::Begin("Sesh Cheat!",&imGuiMain);
+
+			ImGui::ColorPicker3("Glow color.",color, ImGuiColorEditFlags_NoInputs| ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoSidePreview);
+
+			ImGui::End();
 		}
 
 		ImGui::EndFrame();
 		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
 		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
 		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * clear_color.w * 255.0f), (int)(clear_color.y * clear_color.w * 255.0f), (int)(clear_color.z * clear_color.w * 255.0f), (int)(clear_color.w * 255.0f));
+		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(color[0] * 255.0f), (int)(color[1]* 255.0f), (int)(color[2] * 255.0f), (int)(255.0f));
 		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
 		if (g_pd3dDevice->BeginScene() >= 0)
 		{
