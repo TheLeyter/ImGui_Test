@@ -22,6 +22,16 @@ LPDIRECT3DDEVICE9 g_pd3dDevice = NULL;
 D3DPRESENT_PARAMETERS g_d3dpp = {};
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+enum Tabs {
+	Main,
+	Glow,
+	Radar
+};
+
+Tabs selectedTabs = Tabs::Main;
+
+
+
 #pragma region FuncPrototype
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevIntance, LPSTR lpCmdLine, int iCmdShow);
@@ -115,9 +125,56 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevIntance, LPSTR lpCmdLine,
 		ImGui::NewFrame();
 
 		if (imGuiMain) {
-			ImGui::Begin("Sesh Cheat!",&imGuiMain);
+			ImGui::SetNextWindowSize(ImVec2(600, 400));
+			ImGui::Begin("Sesh Cheat!", &imGuiMain, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
 
-			ImGui::ColorPicker3("Glow color.",color, ImGuiColorEditFlags_NoInputs| ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoSidePreview);
+			ImGui::BeginChild("Menu button", ImVec2(135, 0));
+
+			if (ImGui::Button("Main", ImVec2(135, 30))) {
+				selectedTabs = Tabs::Main;
+			}
+			if(ImGui::Button("Glow", ImVec2(135, 30))){
+			selectedTabs = Tabs::Glow;
+			}
+			if(ImGui::Button("Radar", ImVec2(135, 30))){
+			selectedTabs = Tabs::Radar;
+			}
+
+			ImGui::EndChild();
+
+			ImGui::SameLine(0,0);
+
+			switch (selectedTabs)
+			{
+				case Tabs::Main: {
+					ImGui::BeginChild("Main", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+
+					ImGui::Text("Main Tab.");
+
+					ImGui::EndChild();
+					break;
+				}
+				case Tabs::Glow: {
+					ImGui::BeginChild("Glow", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+
+						ImGui::BeginChild("ColorPicker", ImVec2(300, 300));
+
+						ImGui::ColorPicker3("Glow color.",color, ImGuiColorEditFlags_NoInputs| ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoSidePreview);
+
+						ImGui::EndChild();
+
+					ImGui::EndChild();
+					break;
+				}
+				case Tabs::Radar: {
+					ImGui::BeginChild("Radar", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+
+					ImGui::Text("Radar Tab.");
+
+					ImGui::EndChild();
+					break;
+				}
+			}
 
 			ImGui::End();
 		}
@@ -126,7 +183,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevIntance, LPSTR lpCmdLine,
 		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
 		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
 		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(color[0] * 255.0f), (int)(color[1]* 255.0f), (int)(color[2] * 255.0f), (int)(255.0f));
+		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(color[0] * 255.0f), (int)(color[1] * 255.0f), (int)(color[2] * 255.0f), (int)(255.0f));
 		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
 		if (g_pd3dDevice->BeginScene() >= 0)
 		{
@@ -162,28 +219,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (iMsg)
 	{
-		case WM_DESTROY:
+	case WM_DESTROY:
+	{
+		g_bAppicationState = false;
+		return 0;
+	}
+
+	case WM_SIZE:
+	{
+		if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
 		{
-			g_bAppicationState = false;
-			return 0;
+			g_d3dpp.BackBufferWidth = LOWORD(lParam);
+			g_d3dpp.BackBufferHeight = HIWORD(lParam);
+			ResetDevice();
 		}
 
-		case WM_SIZE:
-		{
-			if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
-			{
-				g_d3dpp.BackBufferWidth = LOWORD(lParam);
-				g_d3dpp.BackBufferHeight = HIWORD(lParam);
-				ResetDevice();
-			}
-
+		return 0;
+	}
+	case WM_SYSCOMMAND: {
+		if ((wParam & 0xfff0) == SC_KEYMENU) { // Disable ALT application menu
 			return 0;
 		}
-		case WM_SYSCOMMAND: {
-			if ((wParam & 0xfff0) == SC_KEYMENU) { // Disable ALT application menu
-				return 0;
-			}
+	}
+
+	case WM_KEYUP: {
+		if (wParam == VK_F5) {
+			imGuiMain = !imGuiMain;
+			return 0;
 		}
+	}
 
 	}
 
@@ -193,7 +257,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 bool CreateDeviceD3D(HWND hWnd)
 {
 
-	if((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
+	if ((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
 		return false;
 
 	ZeroMemory(&g_d3dpp, sizeof(g_d3dpp));
@@ -217,7 +281,7 @@ void CleanupDeviceD3D()
 		g_pd3dDevice = NULL;
 	}
 	if (g_pD3D)
-	{ 
+	{
 		g_pD3D->Release();
 		g_pD3D = NULL;
 	}
